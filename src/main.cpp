@@ -39,12 +39,17 @@ int main(int argc, char* argv[])
         std::string name, ext, data;
     } source_file;
 
+    if(std::ifstream s{source_file_path, std::ios::binary}; s.is_open())
     {
-        using It = std::istreambuf_iterator<char>;
-        std::ifstream s{source_file_path, std::ios::binary};
-        source_file.data.assign(It(s), It());
+        source_file.data.assign(std::istreambuf_iterator<char>(s), {});
         source_file.name = source_file_path.stem().string();
         source_file.ext = source_file_path.extension().string();
+    }
+    else
+    {
+        std::error_code ec;
+        auto status = fs::status(source_file_path, ec);
+        std::cerr << "unable to open source file\n" << ec.message() << '\n';
     }
 
     auto file_count =
@@ -63,8 +68,13 @@ int main(int argc, char* argv[])
         std::ostringstream oss;
         oss << std::setw(std::to_string(file_count).size()) << std::setfill('0') << i;
         auto name = source_file.name + oss.str() + source_file.ext;
-        std::ofstream os{target_folder_path / name, std::ios::binary};
-        os << source_file.data;
+        if(std::ofstream os{target_folder_path / name, std::ios::binary}; os.is_open())
+            os << source_file.data;
+        else
+        {
+            std::cerr << "unable to open file " << i << '\n';
+            break;
+        }
     }
 
     return 0;
