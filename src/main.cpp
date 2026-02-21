@@ -66,7 +66,9 @@ int main(int argc, char* argv[])
             std::cout << text << '\r';
         }
         std::ostringstream oss;
-        oss << std::setw(std::to_string(file_count).size()) << std::setfill('0') << i;
+        static auto length_fmt = std::setw(std::to_string(file_count).size());
+        static auto fill_fmt = std::setfill('0');
+        oss << length_fmt << fill_fmt << i;
         auto name = source_file.name + oss.str() + source_file.ext;
         if(std::ofstream os{target_folder_path / name, std::ios::binary}; os.is_open())
             os << source_file.data;
