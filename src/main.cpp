@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string_view>
+#include <optional>
 #include <fstream>
 #include <filesystem>
 
@@ -13,7 +14,7 @@ void exit_with_failure(std::string msg)
 
 int main(int argc, char* argv[])
 {
-    std::optional<size_t> space;
+    std::optional<size_t> target_size;
     fs::path source_file_path;
     fs::path target_folder_path;
 
@@ -52,12 +53,14 @@ int main(int argc, char* argv[])
                     result.ec != std::errc())
                     exit_with_failure("bad space\n");
                 if(arg == "-sm") value *= 1024 * 1024;
-                space = value;
+                target_size = value;
             }
         }
         else
             exit_with_failure("missing argument value: " + std::string(arg));
     }
+    if(target_folder_path.empty() || source_file_path.empty())
+        exit_with_failure("target folder or source file was not provided");
 
     struct {
         std::string name, ext, data;
@@ -76,21 +79,17 @@ int main(int argc, char* argv[])
         exit_with_failure("unable to open source file\n" + ec.message());
     }
 
-    if(!fs::is_directory(target_folder_path))
-        exit_with_failure("target folder is directory actually");
-    if(!fs::exists(target_folder_path) && !fs::create_directory(target_folder_path))
+    if(fs::exists(target_folder_path))
+        if(!fs::is_directory(target_folder_path))
+            exit_with_failure("target folder is not directory actually");
+    else if(!fs::create_directory(target_folder_path))
         exit_with_failure("failed to create target folder\n");
-    else
-    {
-        std::error_code ec;
-        auto status = fs::status(target_folder_path, ec);
-        if(ec)
-            exit_with_failure("unable to open target folder\n" + ec.message());
-    }
 
+    auto file_size = fs::file_size(source_file_path);
+    if(file_size == 0) file_size++;
     auto file_count =
-        space.value_or(fs::space(target_folder_path).available) /
-        fs::file_size(source_file_path) ?: 1;
+        target_size.value_or(fs::space(target_folder_path).available) /
+        file_size;
 
     std::cout
         << "file target count: " << file_count << '\n'
@@ -109,12 +108,11 @@ int main(int argc, char* argv[])
             std::cout << text << '\r';
         }
         std::ostringstream oss;
-        static auto length_fmt = std::setw(std::to_string(file_count).size());
-        static auto fill_fmt = std::setfill('0');
-        oss << length_fmt << fill_fmt << i;
+        static auto length_fmt = std::to_string(file_count).size();
+        oss << std::setw(length_fmt) << std::setfill('0') << i;
         auto name = source_file.name + oss.str() + source_file.ext;
         if(std::ofstream os{target_folder_path / name, std::ios::binary}; os.is_open())
-            os << source_file.data;
+            os.write(source_file.data.data(), source_file.data.size());
         else
             exit_with_failure("unable to open file " + std::to_string(i));
     }
