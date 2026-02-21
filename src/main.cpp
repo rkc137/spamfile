@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
                 "\t-s: size in bytes (if missing gonna use all avalible space)"
                 "\t-sm: same as -s but in MB"
                 "\t-h: this message";
-        else if(i < argc + 1)
+        else if(i + 1 < argc)
         {
             std::string_view arg_value = argv[++i];
             if(arg_value[0] == '-')
