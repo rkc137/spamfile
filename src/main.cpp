@@ -5,6 +5,12 @@
 
 namespace fs = std::filesystem;
 
+void exit_with_failure(std::string msg)
+{
+    std::cerr << msg << '\n';
+    std::exit(EXIT_FAILURE);
+}
+
 int main(int argc, char* argv[])
 {
     std::optional<size_t> space;
@@ -16,24 +22,24 @@ int main(int argc, char* argv[])
         std::string_view arg = argv[i];
         if(arg[0] != '-')
         {
-            std::cerr << "unknow argument: " << arg << "\n-help to see usage";
+            std::cerr << "unknown argument: " << arg << "\n-help to see usage";
             return EXIT_FAILURE;
         }
         if(arg == "-help" || arg == "-h")
+        {
             std::cout << "usage: spamfile [options]\n"
-                "\t-sf: path to source file"
-                "\t-tf: path to target folder"
-                "\t-s: size in bytes (if missing gonna use all avalible space)"
-                "\t-sm: same as -s but in MB"
-                "\t-h: this message";
+                "\t-sf: path to source file\n"
+                "\t-tf: path to target folder\n"
+                "\t-s: size in bytes (if missing gonna use all avalible space)\n"
+                "\t-sm: same as -s but in MB\n"
+                "\t-h: this message\n";
+            return EXIT_SUCCESS;
+        }
         else if(i + 1 < argc)
         {
             std::string_view arg_value = argv[++i];
             if(arg_value[0] == '-')
-            {
-                std::cerr << "missing argument value: " << arg;
-                return EXIT_FAILURE;
-            }
+                exit_with_failure("missing argument value: " + std::string(arg));
 
             if(arg == "-sf")
                 source_file_path = arg_value;
@@ -43,20 +49,14 @@ int main(int argc, char* argv[])
             {
                 size_t value;
                 if(auto result = std::from_chars(arg_value.data(), arg_value.data() + arg_value.size(), value);
-                    result.ec == std::errc::invalid_argument)
-                {
-                    std::cerr << "bad space\n";
-                    return EXIT_FAILURE;
-                }
+                    result.ec != std::errc())
+                    exit_with_failure("bad space\n");
                 if(arg == "-sm") value *= 1024 * 1024;
                 space = value;
             }
         }
         else
-        {
-            std::cerr << "missing argument value: " << arg;
-            return EXIT_FAILURE;
-        }
+            exit_with_failure("missing argument value: " + std::string(arg));
     }
 
     struct {
@@ -73,29 +73,24 @@ int main(int argc, char* argv[])
     {
         std::error_code ec;
         auto status = fs::status(source_file_path, ec);
-        std::cerr << "unable to open source file\n" << ec.message() << '\n';
-        return EXIT_FAILURE;
+        exit_with_failure("unable to open source file\n" + ec.message());
     }
 
+    if(!fs::is_directory(target_folder_path))
+        exit_with_failure("target folder is directory actually");
     if(!fs::exists(target_folder_path) && !fs::create_directory(target_folder_path))
-    {
-        std::cerr << "failed to create target folder\n";
-        return EXIT_FAILURE;
-    }
+        exit_with_failure("failed to create target folder\n");
     else
     {
         std::error_code ec;
         auto status = fs::status(target_folder_path, ec);
         if(ec)
-        {
-            std::cerr << "unable to open target folder\n" << ec.message() << '\n';
-            return EXIT_FAILURE;
-        }
+            exit_with_failure("unable to open target folder\n" + ec.message());
     }
 
     auto file_count =
         space.value_or(fs::space(target_folder_path).available) /
-        fs::file_size(source_file_path);
+        fs::file_size(source_file_path) ?: 1;
 
     std::cout
         << "file target count: " << file_count << '\n'
@@ -121,10 +116,7 @@ int main(int argc, char* argv[])
         if(std::ofstream os{target_folder_path / name, std::ios::binary}; os.is_open())
             os << source_file.data;
         else
-        {
-            std::cerr << "unable to open file " << i << '\n';
-            return EXIT_FAILURE;
-        }
+            exit_with_failure("unable to open file " + std::to_string(i));
     }
 
     return EXIT_SUCCESS;
