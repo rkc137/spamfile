@@ -16,10 +16,17 @@ int main(int argc, char* argv[])
         std::string_view arg = argv[i];
         if(arg[0] != '-')
         {
-            std::cerr << "unknow argument: " << arg;
+            std::cerr << "unknow argument: " << arg << "\n-help to see usage";
             return EXIT_FAILURE;
         }
-        if(i < argc + 1)
+        if(arg == "-help" || arg == "-h")
+            std::cout << "usage: spamfile [options]\n"
+                "\t-sf: path to source file"
+                "\t-tf: path to target folder"
+                "\t-s: size in bytes (if missing gonna use all avalible space)"
+                "\t-sm: same as -s but in MB"
+                "\t-h: this message";
+        else if(i < argc + 1)
         {
             std::string_view arg_value = argv[++i];
             if(arg_value[0] == '-')
@@ -32,7 +39,7 @@ int main(int argc, char* argv[])
                 source_file_path = arg_value;
             else if(arg == "-tf")
                 target_folder_path = arg_value;
-            else if(arg == "-s")
+            else if(arg == "-s" || arg == "-sm")
             {
                 size_t value;
                 if(auto result = std::from_chars(arg_value.data(), arg_value.data() + arg_value.size(), value);
@@ -41,6 +48,7 @@ int main(int argc, char* argv[])
                     std::cerr << "bad space\n";
                     return EXIT_FAILURE;
                 }
+                if(arg == "-sm") value *= 1024 * 1024;
                 space = value;
             }
         }
@@ -91,7 +99,7 @@ int main(int argc, char* argv[])
 
     std::cout
         << "file target count: " << file_count << '\n'
-        << "total spam size: " << (file_count * source_file.data.size()) / 1'000'000 << "MBs\n"
+        << "total spam size: " << (file_count * source_file.data.size()) / (1024 * 1024) << "MBs\n"
         << "continue? (N/Y)";
     char YorN;
     std::cin >> YorN;
