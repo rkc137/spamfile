@@ -89,7 +89,14 @@ int main(int argc, char* argv[])
         space.value_or(fs::space(target_folder_path).available) /
         fs::file_size(source_file_path);
 
-    std::cout << "file target count: " << file_count << '\n';
+    std::cout
+        << "file target count: " << file_count << '\n'
+        << "total spam size: " << (file_count * source_file.data.size()) / 1'000'000 << "MBs\n"
+        << "continue? (N/Y)";
+    char YorN;
+    std::cin >> YorN;
+    if(std::toupper(YorN) != 'Y')
+        return EXIT_SUCCESS;
 
     for(size_t i = 0; i < file_count; i++)
     {
@@ -108,9 +115,9 @@ int main(int argc, char* argv[])
         else
         {
             std::cerr << "unable to open file " << i << '\n';
-            break;
+            return EXIT_FAILURE;
         }
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
