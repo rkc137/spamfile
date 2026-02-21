@@ -50,6 +50,23 @@ int main(int argc, char* argv[])
         std::error_code ec;
         auto status = fs::status(source_file_path, ec);
         std::cerr << "unable to open source file\n" << ec.message() << '\n';
+        return EXIT_FAILURE;
+    }
+
+    if(!fs::exists(target_folder_path) && !fs::create_directory(target_folder_path))
+    {
+        std::cerr << "failed to create target folder\n";
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        std::error_code ec;
+        auto status = fs::status(target_folder_path, ec);
+        if(ec)
+        {
+            std::cerr << "unable to open target folder\n" << ec.message() << '\n';
+            return EXIT_FAILURE;
+        }
     }
 
     auto file_count =
