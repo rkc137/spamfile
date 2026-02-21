@@ -21,7 +21,17 @@ int main(int argc, char* argv[])
                 source_file_path = arg_value;
             else if(arg == "-tf")
                 target_folder_path = arg_value;
-            // TODO: if(arg == "-s") space = arg_value
+            else if(arg == "-s")
+            {
+                size_t value;
+                if(auto result = std::from_chars(arg_value.data(), arg_value.data() + arg_value.size(), value);
+                    result.ec == std::errc::invalid_argument)
+                {
+                    std::cerr << "bad space\n";
+                    return EXIT_FAILURE;
+                }
+                space = value;
+            }
         }
     }
 
@@ -38,16 +48,17 @@ int main(int argc, char* argv[])
     }
 
     auto file_count =
-        fs::space(target_folder_path).available /
+        space.value_or(fs::space(target_folder_path).available) /
         fs::file_size(source_file_path);
-    std::clog << "file target count: " << file_count << '\n';
+
+    std::cout << "file target count: " << file_count << '\n';
 
     for(size_t i = 0; i < file_count; i++)
     {
         if(i % 10 == 0)
         {
             auto text = std::to_string(i) + " of " + std::to_string(file_count);
-            std::clog << text << '\r';
+            std::cout << text << '\r';
         }
         std::ostringstream oss;
         oss << std::setw(std::to_string(file_count).size()) << std::setfill('0') << i;
