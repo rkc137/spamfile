@@ -14,9 +14,20 @@ int main(int argc, char* argv[])
     for(int i = 1; i < argc; i++)
     {
         std::string_view arg = argv[i];
-        if(arg[0] == '-' && i < argc + 1)
+        if(arg[0] != '-')
+        {
+            std::cerr << "unknow argument: " << arg;
+            return EXIT_FAILURE;
+        }
+        if(i < argc + 1)
         {
             std::string_view arg_value = argv[++i];
+            if(arg_value[0] == '-')
+            {
+                std::cerr << "missing argument value: " << arg;
+                return EXIT_FAILURE;
+            }
+
             if(arg == "-sf")
                 source_file_path = arg_value;
             else if(arg == "-tf")
@@ -32,6 +43,11 @@ int main(int argc, char* argv[])
                 }
                 space = value;
             }
+        }
+        else
+        {
+            std::cerr << "missing argument value: " << arg;
+            return EXIT_FAILURE;
         }
     }
 
