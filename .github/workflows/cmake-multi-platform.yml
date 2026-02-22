@@ -13,16 +13,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: [Release]
         include:
           - os: windows-latest
             build_type: Release
+            c_compiler: cl
+            cpp_compiler: cl
 
           - os: ubuntu-latest
+            build_type: Release
             c_compiler: gcc-13
             cpp_compiler: g++-13
 
           - os: ubuntu-latest
+            build_type: Release
             c_compiler: clang-17
             cpp_compiler: clang++-17
 
@@ -41,7 +44,7 @@ jobs:
           sudo apt update
           sudo apt install -y clang-17 libc++-17-dev libc++abi-17-dev
 
-      - name: Configure (Linux GCC)
+      - name: Configure Linux GCC
         if: matrix.cpp_compiler == 'g++-13'
         run: >
           cmake -B build
@@ -49,7 +52,8 @@ jobs:
           -DCMAKE_CXX_COMPILER=g++-13
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -S .
-      - name: Configure (Linux Clang + libc++)
+
+      - name: Configure Linux Clang + libc++
         if: matrix.cpp_compiler == 'clang++-17'
         run: >
           cmake -B build
@@ -60,7 +64,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -S .
 
-      - name: Configure (Windows)
+      - name: Configure Windows
         if: matrix.os == 'windows-latest'
         run: cmake -B build -S .
 
@@ -69,12 +73,3 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --build-config ${{ matrix.build_type }}
-
-      - name: Upload Release Artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: spamfile-release
-          path: |
-            build/spamfile        # Linux / Mac
-            build/spamfile.exe    # Windows
