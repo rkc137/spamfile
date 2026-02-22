@@ -23,8 +23,8 @@ jobs:
             cpp_compiler: g++-13
 
           - os: ubuntu-latest
-            c_compiler: clang-16
-            cpp_compiler: clang++-16
+            c_compiler: clang-17
+            cpp_compiler: clang++-17
 
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +35,11 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-13 g++-13
 
-      - name: Install Clang 16
-        if: matrix.cpp_compiler == 'clang++-16'
+      - name: Install Clang 17
+        if: matrix.cpp_compiler == 'clang++-17'
         run: |
           sudo apt update
-          sudo apt install -y clang-16
+          sudo apt install -y clang-17
 
       - name: Configure (Linux)
         if: matrix.os == 'ubuntu-latest'
