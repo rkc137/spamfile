@@ -3,7 +3,6 @@
 #include <optional>
 #include <fstream>
 #include <limits>
-#include <ranges>
 #include <charconv>
 #include <sstream>
 #include <filesystem>
@@ -42,7 +41,7 @@ int main(int argc, char* argv[])
         {
             size_t value;
             constexpr std::string_view mb_ending = "mb";
-            bool is_mb = std::ranges::ends_with(input_size, mb_ending);
+            bool is_mb = input_size.ends_with(mb_ending);
             auto result = std::from_chars(
                 input_size.data(),
                 input_size.data() + input_size.size() - (is_mb ? mb_ending.size() : 0),
