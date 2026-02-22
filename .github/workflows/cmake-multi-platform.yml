@@ -31,11 +31,11 @@ jobs:
             c_compiler: cl
             cpp_compiler: cl
           - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-13
+            cpp_compiler: g++-13
           - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+            c_compiler: clang-16
+            cpp_compiler: clang++-16
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -53,6 +53,18 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Install Clang 16
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang'
+      run: |
+        sudo apt update
+        sudo apt install -y clang-16
+
+    - name: Install GCC 13
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'gcc'
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-13 g++-13
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
