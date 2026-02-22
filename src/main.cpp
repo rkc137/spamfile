@@ -4,6 +4,8 @@
 #include <fstream>
 #include <limits>
 #include <ranges>
+#include <charconv>
+#include <sstream>
 #include <filesystem>
 
 namespace fs = std::filesystem;
