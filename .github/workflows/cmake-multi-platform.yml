@@ -69,3 +69,12 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --build-config ${{ matrix.build_type }}
+
+      - name: Upload Release Artifact
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: spamfile-release
+          path: |
+            build/spamfile        # Linux / Mac
+            build/spamfile.exe    # Windows
