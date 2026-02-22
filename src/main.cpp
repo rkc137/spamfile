@@ -2,6 +2,8 @@
 #include <string_view>
 #include <optional>
 #include <fstream>
+#include <limits>
+#include <ranges>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -9,16 +11,47 @@ namespace fs = std::filesystem;
 void exit_with_failure(std::string msg)
 {
     std::cerr << msg << '\n';
+    getchar();
     std::exit(EXIT_FAILURE);
 }
 
 int main(int argc, char* argv[])
 {
+    constexpr auto byte_per_mb = 1024 * 1024;
     std::optional<size_t> target_size;
     fs::path source_file_path;
     fs::path target_folder_path;
 
-    for(int i = 1; i < argc; i++)
+    if(argc < 2)
+    {
+        std::cout << "path to source file\n>";
+        std::cin >> source_file_path;
+        std::cout << "path of target folder\n>";
+        std::cin >> target_folder_path;
+
+        std::cout <<
+            "target size in bytes, or megabytes(add 'mb' at the end of number)\n"
+            "if you want to fill all space just press enter\n>";
+        std::string input_size;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::getline(std::cin, input_size);
+
+        if(!input_size.empty())
+        {
+            size_t value;
+            constexpr std::string_view mb_ending = "mb";
+            bool is_mb = std::ranges::ends_with(input_size, mb_ending);
+            auto result = std::from_chars(
+                input_size.data(),
+                input_size.data() + input_size.size() - (is_mb ? mb_ending.size() : 0),
+                value
+            );
+            if(result.ec != std::errc{})
+                exit_with_failure("bad space\n");
+            target_size = value * (is_mb ? byte_per_mb : 1);
+        }
+    }
+    else for(int i = 1; i < argc; i++)
     {
         std::string_view arg = argv[i];
         if(!arg.empty() || arg[0] != '-')
@@ -56,7 +89,7 @@ int main(int argc, char* argv[])
                 );
                 if(result.ec != std::errc{})
                     exit_with_failure("bad space\n");
-                if(arg == "-sm") value *= 1024 * 1024;
+                if(arg == "-sm") value *= byte_per_mb;
                 target_size = value;
             }
         }
@@ -98,9 +131,11 @@ int main(int argc, char* argv[])
         target_size.value_or(fs::space(target_folder_path).available) /
         source_file.size;
 
+    auto total_size = file_count * source_file.size;
     std::cout
         << "file target count: " << file_count << '\n'
-        << "total spam size: " << (file_count * source_file.size) / (1024 * 1024) << "MBs\n"
+        << "total spam size: " << total_size / byte_per_mb << " MBs "
+        << total_size % byte_per_mb << " Bytes\n"
         << "continue? (N/Y)";
     char YorN;
     std::cin >> YorN;
